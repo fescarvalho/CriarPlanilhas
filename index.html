@@ -51,10 +51,10 @@
             <input type="text" name="nome" required placeholder="Ex: EMPRESA X LTDA" autocomplete="off">
             
             <label>TELEFONE</label>
-            <input type="text" name="telefone" placeholder="(00) 00000-0000">
+            <input type="text" name="telefone" id="telefoneInput" placeholder="(00) 00000-0000" maxlength="15">
             
             <label>CNPJ</label>
-            <input type="text" name="cnpj" required placeholder="00.000.000/0000-00">
+            <input type="text" name="cnpj" id="cnpjInput" required placeholder="00.000.000/0000-00" maxlength="18">
             
             <label>INSCRIÇÃO ESTADUAL</label>
             <input type="text" name="inscricao" placeholder="000.000.000.000">
@@ -67,6 +67,36 @@
     </div>
 
     <script>
+        // --- LÓGICA DE FORMATAÇÃO (MÁSCARAS) ---
+        
+        // Formatação CNPJ
+        document.getElementById('cnpjInput').addEventListener('input', function (e) {
+            let value = e.target.value;
+            
+            // Remove tudo que não é dígito
+            value = value.replace(/\D/g, "");
+            
+            // Aplica a máscara 00.000.000/0000-00
+            value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            value = value.replace(/(\d{4})(\d)/, "$1-$2");
+            
+            e.target.value = value;
+        });
+
+        // Formatação Telefone
+        document.getElementById('telefoneInput').addEventListener('input', function (e) {
+            let value = e.target.value;
+            value = value.replace(/\D/g, "");
+            
+            // Máscara dinâmica (Funciona para 8 ou 9 dígitos)
+            value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
+            value = value.replace(/(\d)(\d{4})$/, "$1-$2");
+            
+            e.target.value = value;
+        });
+
         // --- CÓDIGO DO GERADOR ---
         const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
         const PALETA = {
