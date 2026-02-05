@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador Luxury 2026</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" integrity="sha512-dlPw+06PXLrN2xE1wM8B5XoVvwFTEzbJK6SJWMbHfiVYe0G6Rbztxs5vDNkxVwbNQDykCiHgE0+V9uT09C0M8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
     <style>
         body {
             background-color: #000000;
@@ -67,7 +67,7 @@
     </div>
 
     <script>
-        // --- CÓDIGO DO GERADOR (Adaptado para o Navegador) ---
+        // --- CÓDIGO DO GERADOR ---
         const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
         const PALETA = {
             fundoPreto: 'FF000000',
@@ -86,7 +86,6 @@
         estilos.bordaCompleta = { top: estilos.bordaFina, left: estilos.bordaFina, bottom: estilos.bordaFina, right: estilos.bordaFina };
 
         async function gerarPlanilha(empresa) {
-            // Nota: No navegador usamos 'ExcelJS' (global) ao invés de require
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Faturamento 2026', { 
                 views: [{ showGridLines: false }],
@@ -168,19 +167,15 @@
             const btn = e.target.querySelector('button');
             const originalText = btn.innerText;
             
-            // UI Feedback
             btn.innerText = "PROCESSANDO..."; 
             btn.disabled = true;
 
             try {
-                // Pega os dados do formulário
                 const formData = new FormData(e.target);
                 const dados = Object.fromEntries(formData.entries());
 
-                // Gera a planilha localmente
                 const buffer = await gerarPlanilha(dados);
 
-                // Cria o Blob e faz o download
                 const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -196,10 +191,9 @@
 
             } catch (erro) {
                 console.error(erro);
-                alert('Erro ao gerar a planilha. Verifique o console.');
+                alert('Erro ao gerar a planilha. Verifique o console (F12).');
             }
 
-            // Restaura o botão
             btn.innerText = originalText;
             btn.disabled = false;
         });
