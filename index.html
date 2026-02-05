@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Luxury 2026</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #D4AF37;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            border: 2px solid #B8860B;
+            padding: 40px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.15);
+            background: #050505;
+        }
+        h1 { text-align: center; margin-bottom: 30px; font-weight: 300; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9em; color: #FFF; letter-spacing: 0.5px; }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 20px;
+            background: #111; border: 1px solid #333; color: #FFF;
+            box-sizing: border-box; outline: none; transition: 0.3s;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        input:focus { border-color: #D4AF37; box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); }
+        button {
+            width: 100%; padding: 15px; background: #D4AF37; color: #000;
+            border: none; font-weight: bold; cursor: pointer; transition: 0.3s;
+            font-size: 16px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        button:hover { background: #B8860B; color: #FFF; }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FATURAMENTO 2026</h1>
+        <form id="formEmpresa">
+            <label>NOME DA FIRMA</label>
+            <input type="text" name="nome" required placeholder="Ex: EMPRESA X LTDA" autocomplete="off">
+            
+            <label>TELEFONE</label>
+            <input type="text" name="telefone" placeholder="(00) 00000-0000">
+            
+            <label>CNPJ</label>
+            <input type="text" name="cnpj" required placeholder="00.000.000/0000-00">
+            
+            <label>INSCRIÇÃO ESTADUAL</label>
+            <input type="text" name="inscricao" placeholder="000.000.000.000">
+            
+            <label>SENHA NFS-E</label>
+            <input type="text" name="senha_nfse" placeholder="******">
+            
+            <button type="submit">GERAR PLANILHA</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('formEmpresa').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "PROCESSANDO..."; btn.disabled = true;
+
+            const data = Object.fromEntries(new FormData(e.target).entries());
+            const response = await fetch('/gerar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `${data.nome.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_FATURAMENTO_2026.xlsx`;
+                document.body.appendChild(a); a.click(); a.remove();
+            } else alert('Erro ao gerar.');
+            btn.innerText = originalText; btn.disabled = false;
+        });
+    </script>
+</body>
+</html>
