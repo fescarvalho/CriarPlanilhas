@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador Luxury 2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" integrity="sha512-dlPw+06PXLrN2xE1wM8B5XoVvwFTEzbJK6SJWMbHfiVYe0G6Rbztxs5vDNkxVwbNQDykCiHgE0+V9uT09C0M8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body {
             background-color: #000000;
@@ -64,23 +65,143 @@
             <button type="submit">GERAR PLANILHA</button>
         </form>
     </div>
+
     <script>
+        // --- CÓDIGO DO GERADOR (Adaptado para o Navegador) ---
+        const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+        const PALETA = {
+            fundoPreto: 'FF000000',
+            douradoOuro: 'FFD4AF37',
+            textoBranco: 'FFFFFFFF',
+            textoPreto: 'FF000000',
+            bordaDourada: 'FFB8860B'
+        };
+
+        const estilos = {
+            fillSolido: (corArgb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: corArgb } }),
+            bordaFina: { style: 'thin', color: { argb: PALETA.bordaDourada } },
+            alinhamentoCentro: { vertical: 'middle', horizontal: 'center', wrapText: true },
+            alinhamentoEsquerda: { vertical: 'middle', horizontal: 'left' }
+        };
+        estilos.bordaCompleta = { top: estilos.bordaFina, left: estilos.bordaFina, bottom: estilos.bordaFina, right: estilos.bordaFina };
+
+        async function gerarPlanilha(empresa) {
+            // Nota: No navegador usamos 'ExcelJS' (global) ao invés de require
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Faturamento 2026', { 
+                views: [{ showGridLines: false }],
+                pageSetup: { horizontalCentered: true, verticalCentered: false }
+            });
+
+            // --- SEÇÃO 1: CABEÇALHO ---
+            sheet.getCell('A1').value = "ANO 2026";
+            sheet.getCell('A2').value = `FIRMA: ${empresa.nome.toUpperCase()}`;
+            sheet.getCell('A3').value = `TELEFONE: ${empresa.telefone || ''}`;
+            sheet.getCell('A4').value = `CNPJ: ${empresa.cnpj}`;
+            sheet.getCell('A5').value = `INSCRIÇÃO ESTADUAL: ${empresa.inscricao}`;
+            sheet.getCell('A6').value = `SENHA EMISSÃO NFS-E: ${empresa.senha_nfse || ''}`;
+
+            for (let r = 1; r <= 6; r++) {
+                sheet.mergeCells(`A${r}:G${r}`);
+                const cell = sheet.getCell(`A${r}`);
+                cell.fill = estilos.fillSolido(PALETA.fundoPreto);
+                cell.font = { name: 'Segoe UI', size: (r === 1 ? 16 : 11), bold: true, color: { argb: PALETA.douradoOuro } };
+                cell.alignment = { ...estilos.alinhamentoEsquerda, indent: 1 };
+                cell.border = { left: estilos.bordaFina, right: estilos.bordaFina, top: (r === 1 ? estilos.bordaFina : undefined), bottom: (r === 6 ? estilos.bordaFina : undefined) };
+            }
+
+            // --- SEÇÃO 2: TÍTULOS ---
+            sheet.mergeCells('A8:A9'); sheet.getCell('A8').value = "MÊS";
+            sheet.mergeCells('B8:C8'); sheet.getCell('B8').value = "FATURAMENTO";
+            sheet.mergeCells('D8:E8'); sheet.getCell('D8').value = "VENDAS DE SERVIÇOS\n(c/ e s/ Retenção)";
+            sheet.mergeCells('F8:F9'); sheet.getCell('F8').value = "%";
+            sheet.mergeCells('G8:G9'); sheet.getCell('G8').value = "VALOR DO IMPOSTO";
+
+            sheet.getCell('B9').value = "Mensal"; sheet.getCell('C9').value = "Acumulado";
+            sheet.getCell('D9').value = "C/ Retenção"; sheet.getCell('E9').value = "S/ Retenção";
+
+            sheet.getRow(8).height = 35;
+            [8, 9].forEach(r => {
+                sheet.getRow(r).eachCell({ includeEmpty: false }, (cell, colNumber) => {
+                    if (colNumber <= 7) {
+                        cell.fill = estilos.fillSolido(PALETA.douradoOuro);
+                        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: PALETA.textoPreto } };
+                        cell.alignment = estilos.alinhamentoCentro;
+                        cell.border = estilos.bordaCompleta;
+                    }
+                });
+            });
+
+            // --- SEÇÃO 3: CORPO ---
+            meses.forEach((mes, index) => {
+                const rowNum = 10 + index;
+                const row = sheet.getRow(rowNum);
+                row.height = 20;
+
+                const cellMes = row.getCell(1);
+                cellMes.value = mes;
+                cellMes.font = { name: 'Segoe UI', bold: true, color: { argb: PALETA.textoPreto } };
+                cellMes.fill = estilos.fillSolido(PALETA.douradoOuro);
+                
+                row.getCell(3).value = { formula: index === 0 ? `IF(B${rowNum}="","",B${rowNum})` : `IF(B${rowNum}="","",B${rowNum}+C${rowNum - 1})` };
+                row.getCell(7).value = { formula: `IF(F${rowNum}="","",(D${rowNum}+E${rowNum})*F${rowNum})` };
+
+                for (let i = 1; i <= 7; i++) {
+                    const cell = row.getCell(i);
+                    cell.border = estilos.bordaCompleta;
+                    cell.alignment = estilos.alinhamentoCentro;
+                    if ([2, 3, 4, 5, 7].includes(i)) cell.numFmt = '_-R$ * #,##0.00_-';
+                    if (i === 6) cell.numFmt = '0.00%';
+                }
+            });
+
+            sheet.getColumn('A').width = 12; sheet.getColumn('B').width = 18; sheet.getColumn('C').width = 18;
+            sheet.getColumn('D').width = 16; sheet.getColumn('E').width = 16; sheet.getColumn('F').width = 8;
+            sheet.getColumn('G').width = 20;
+
+            return await workbook.xlsx.writeBuffer();
+        }
+
+        // --- MANIPULAÇÃO DO FORMULÁRIO ---
         document.getElementById('formEmpresa').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
             const originalText = btn.innerText;
-            btn.innerText = "PROCESSANDO..."; btn.disabled = true;
-
-            const data = Object.fromEntries(new FormData(e.target).entries());
-            const response = await fetch('/gerar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             
-            if (response.ok) {
-                const blob = await response.blob();
+            // UI Feedback
+            btn.innerText = "PROCESSANDO..."; 
+            btn.disabled = true;
+
+            try {
+                // Pega os dados do formulário
+                const formData = new FormData(e.target);
+                const dados = Object.fromEntries(formData.entries());
+
+                // Gera a planilha localmente
+                const buffer = await gerarPlanilha(dados);
+
+                // Cria o Blob e faz o download
+                const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `${data.nome.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_FATURAMENTO_2026.xlsx`;
-                document.body.appendChild(a); a.click(); a.remove();
-            } else alert('Erro ao gerar.');
-            btn.innerText = originalText; btn.disabled = false;
+                const a = document.createElement('a');
+                
+                const nomeArquivo = (dados.nome || 'Empresa').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                a.href = url;
+                a.download = `${nomeArquivo}_FATURAMENTO_2026.xlsx`;
+                
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+            } catch (erro) {
+                console.error(erro);
+                alert('Erro ao gerar a planilha. Verifique o console.');
+            }
+
+            // Restaura o botão
+            btn.innerText = originalText;
+            btn.disabled = false;
         });
     </script>
 </body>
